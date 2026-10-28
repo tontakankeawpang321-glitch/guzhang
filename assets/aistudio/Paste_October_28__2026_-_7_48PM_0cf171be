@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guzheng Master - กู่เจิงเสมือนจริง</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap');
+
+        :root {
+            --wood-dark: #3e2723;
+            --wood-light: #5d4037;
+            --wood-texture: #8d6e63;
+            --string-color: #f5f5f5;
+            --string-green: #4caf50;
+            --bridge-color: #d7ccc8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            font-family: 'Sarabun', sans-serif;
+            overflow: hidden; /* Prevent scrolling */
+            touch-action: none; /* Disable default touch actions */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            color: white;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* --- Header & Controls --- */
+        header {
+            background: linear-gradient(to bottom, #212121, #000);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 10;
+            height: 60px;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            color: #d4af37; /* Gold color */
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            background: #424242;
+            border: 1px solid #616161;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.active-record {
+            background: #d32f2f;
+            border-color: #ff5252;
+            animation: pulse 1.5s infinite;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+        }
+
+        /* --- Autoplay Song Control Bar --- */
+        .song-control-bar {
+            background: rgba(43, 29, 25, 0.95);
+            border-bottom: 2px solid #5d4037;
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            z-index: 9;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .song-control-bar span {
+            font-size: 0.9rem;
+            color: #d4af37;
+            font-weight: 600;
+        }
+
+        .song-control-bar select {
+            background: #1a100d;
+            color: #ffd700;
+            border: 1px solid #d4af37;
+            padding: 6px 12px;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.85rem;
+        }
+
+        .btn-autoplay {
+            background: #d4af37;
+            color: #000;
+            border: 1px solid #fff;
+            font-weight: 600;
+        }
+
+        .btn-autoplay:hover {
+            background: #ffd700;
+        }
+
+        .btn-autoplay.active-play {
+            background: #ff8f00 !important;
+            color: #fff;
+            border-color: #ffb300;
+        }
+
+        #now-playing {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-shadow: 1px 1px 2px #000;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        /* --- Guzheng Board --- */
+        .guzheng-container {
+            flex-grow: 1;
+            position: relative;
+            background: 
+                linear-gradient(90deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 10%, rgba(0,0,0,0) 90%, rgba(0,0,0,0.6) 100%),
+                repeating-linear-gradient(45deg, var(--wood-dark) 0px, var(--wood-light) 2px, var(--wood-dark) 8px);
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column; /* Strings stacked vertically */
+            justify-content: center;
+            padding: 20px 0;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        /* Ornamentation (Wood Grain overlay) */
+        .guzheng-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.1'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        /* Right side compartment (Visual only) */
+        .tuning-box {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 15%;
+            background: linear-gradient(to right, rgba(0,0,0,0.8), rgba(62, 39, 35, 0.9));
+            border-left: 5px solid #281813;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.2);
+            writing-mode: vertical-rl;
+            font-size: 2rem;
+            font-family: serif;
+        }
+
+        /* --- Strings Area --- */
+        .strings-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            height: 100%;
+            width: 85%; /* Leave room for tuning box */
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .string-row {
+            position: relative;
+            width: 100%;
+            height: 100%; /* Distribute evenly */
+            display: flex;
+            align-items: center;
+        }
+
+        /* The actual string line */
+        .string {
+            width: 100%;
+            height: 3px; /* Slightly thicker for better touch target */
+            background: var(--string-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 2;
+            transition: transform 0.05s ease-in-out;
+            cursor: pointer;
+        }
+        
+        /* Expand Hit Area for Touch without changing visual size too much */
+        .string::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            z-index: 10; /* Higher than visual string */
+        }
+
+        /* Green Strings (Usually 3, 8, 13, 18, 21) */
+        .string.green {
+            background: var(--string-green);
+        }
+
+        /* Bridge (The wooden support) */
+        .bridge {
+            position: absolute;
+            width: 12px;
+            height: 20px;
+            background: linear-gradient(to bottom, #d7ccc8, #8d6e63);
+            border-radius: 2px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.6);
+            z-index: 1;
+            /* Position bridges dynamically in JS to form the S-curve */
+        }
+
+        /* Note Label */
+        .note-label {
+            position: absolute;
+            left: -10px;
+            color: #ffca28;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.2s, background-color 0.2s;
+            pointer-events: none;
+            background: rgba(0,0,0,0.6);
+            padding: 2px 4px;
+            border-radius: 4px;
+            z-index: 4;
+        }
+        
+        .show-notes .note-label {
+            opacity: 1;
+        }
+
+        /* Vibrating standard feedback */
+        .string.vibrating {
+            animation: vibrate 0.15s linear infinite;
+            box-shadow: 0 0 5px #fff, 0 0 10px var(--string-green);
+        }
+
+        /* Autoplay golden feedback */
+        .string.vibrating-autoplay {
+            animation: vibrate-gold 0.12s linear infinite;
+            background: #ffd700 !important;
+            box-shadow: 0 0 10px #ffd700, 0 0 20px #ffaa00;
+        }
+
+        /* Label Pop-out effect */
+        .note-label.label-highlight {
+            opacity: 1 !important;
+            background: #ff9800 !important;
+            color: #fff !important;
+            transform: scale(1.3);
+            box-shadow: 0 0 8px #ff9800;
+        }
+
+        @keyframes vibrate {
+            0% { transform: translateY(0); }
+            25% { transform: translateY(-2px); }
+            50% { transform: translateY(0); }
+            75% { transform: translateY(2px); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes vibrate-gold {
+            0% { transform: translateY(0); }
+            25% { transform: translateY(-3px); }
+            50% { transform: translateY(0); }
+            75% { transform: translateY(3px); }
+            100% { transform: translateY(0); }
+        }
+
+        /* Hint Overlay */
+        #hint-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        #hint-overlay h2 { color: #d4af37; margin-bottom: 20px; }
+        #hint-overlay p { color: #eee; margin-bottom: 30px; line-height: 1.6; }
+        #hint-overlay button {
+            background: #d4af37;
+            color: black;
+            font-weight: bold;
+            font-size: 1.2rem;
+            padding: 15px 40px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        /* Custom Notification Toast (Replaces block-prone alert) */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(33, 21, 17, 0.95);
+            border: 1.5px solid #d4af37;
+            color: #ffd700;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+            opacity: 0;
+            pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            font-size: 0.9rem;
+        }
+
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            h1 { font-size: 1rem; }
+            button { padding: 5px 8px; font-size: 0.8rem; }
+            .tuning-box { width: 10%; }
+            .strings-wrapper { width: 90%; }
+            .song-control-bar { padding: 5px 10px; gap: 8px; }
+            .song-control-bar span { font-size: 0.8rem; }
+            .song-control-bar select { padding: 4px 8px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Start Overlay -->
+    <div id="hint-overlay">
+        <h2>ยินดีต้อนรับสู่กู่เจิงเสมือนจริง</h2>
+        <p>เวอร์ชัน High Performance พร้อมระบบเล่นอัตโนมัติ<br>
+        1. เปิดเสียงอุปกรณ์ของคุณ<br>
+        2. หากใช้มือถือ ให้หมุนเป็นแนวนอน<br>
+        3. สามารถเลือกเพลงที่แถบด้านบนเพื่อเล่นโน้ตสาธิตอัตโนมัติ</p>
+        <button onclick="startApp()">เริ่มเล่น (Start)</button>
+    </div>
+
+    <!-- Alert replacement Container -->
+    <div id="toast">ข้อความแจ้งเตือน</div>
+
+    <header>
+        <h1>古筝 Guzheng</h1>
+        <div class="controls">
+            <button id="btn-notes" onclick="toggleNotes()">แสดงโน้ต</button>
+            <button id="btn-record" onclick="toggleRecord()">🔴 อัดเสียง</button>
+            <button id="btn-play" onclick="playRecording()" disabled>▶️ เล่น</button>
+            <button id="btn-download" onclick="downloadRecording()" disabled>⬇️ โหลด</button>
+        </div>
+    </header>
+
+    <!-- --- Auto Play Bar --- -->
+    <div class="song-control-bar">
+        <span>🎵 เพลงสาธิต:</span>
+        <select id="song-select" onchange="changeSong()">
+            <option value="">-- เลือกบทเพลง --</option>
+            <option value="canghai">เสียงหัวเราะเยาะยุทธจักร (Blue Sea Laughter)</option>
+            <option value="molihua">ดอกมะลิ (Jasmine Flower)</option>
+            <option value="loykrathong">ลอยกระทง (Loy Krathong)</option>
+        </select>
+        <button id="btn-autoplay" class="btn-autoplay" onclick="toggleAutoplay()">▶️ เล่นอัตโนมัติ</button>
+        <div id="now-playing"></div>
+    </div>
+
+    <div class="guzheng-container" id="board">
+        <div class="tuning-box">古筝</div>
+        <div class="strings-wrapper" id="strings-area">
+            <!-- Strings will be generated by JS -->
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const stringData = [
+            { note: "D6", freq: 1174.66, isGreen: false }, // 1
+            { note: "B5", freq: 987.77, isGreen: false },  // 2
+            { note: "A5", freq: 880.00, isGreen: true },   // 3 (Green)
+            { note: "F#5", freq: 739.99, isGreen: false }, // 4
+            { note: "E5", freq: 659.25, isGreen: false },  // 5
+            { note: "D5", freq: 587.33, isGreen: false },  // 6
+            { note: "B4", freq: 493.88, isGreen: false },  // 7
+            { note: "A4", freq: 440.00, isGreen: true },   // 8 (Green)
+            { note: "F#4", freq: 369.99, isGreen: false }, // 9
+            { note: "E4", freq: 329.63, isGreen: false },  // 10
+            { note: "D4", freq: 293.66, isGreen: false },  // 11
+            { note: "B3", freq: 246.94, isGreen: false },  // 12
+            { note: "A3", freq: 220.00, isGreen: true },   // 13 (Green)
+            { note: "F#3", freq: 185.00, isGreen: false }, // 14
+            { note: "E3", freq: 164.81, isGreen: false },  // 15
+            { note: "D3", freq: 146.83, isGreen: false },  // 16
+            { note: "B2", freq: 123.47, isGreen: false },  // 17
+            { note: "A2", freq: 110.00, isGreen: true },   // 18 (Green)
+            { note: "F#2", freq: 92.50, isGreen: false },  // 19
+            { note: "E2", freq: 82.41, isGreen: false },   // 20
+            { note: "D2", freq: 73.42, isGreen: false },   // 21
+        ];
+
+        // --- Song Database (Demonstration Notes mapped by index 0-20 with timing) ---
+        const songs = {
+            canghai: {
+                title: "เสียงหัวเราะเยาะยุทธจักร",
+                notes: [
+                    { idx: 2, delay: 0, note: "A5" },
+                    { idx: 3, delay: 500, note: "F#5" },
+                    { idx: 4, delay: 1000, note: "E5" },
+                    { idx: 5, delay: 1500, note: "D5" },
+                    { idx: 6, delay: 2000, note: "B4" },
+                    //
+                    { idx: 3, delay: 3000, note: "F#5" },
+                    { idx: 4, delay: 3500, note: "E5" },
+                    { idx: 5, delay: 4000, note: "D5" },
+                    { idx: 6, delay: 4500, note: "B4" },
+                    { idx: 7, delay: 5000, note: "A4" },
+                    //
+                    { idx: 7, delay: 6000, note: "A4" },
+                    { idx: 6, delay: 6500, note: "B4" },
+                    { idx: 7, delay: 7000, note: "A4" },
+                    { idx: 6, delay: 7500, note: "B4" },
+                    { idx: 5, delay: 8000, note: "D5" },
+                    { idx: 4, delay: 8500, note: "E5" },
+                    { idx: 3, delay: 9000, note: "F#5" },
+                    { idx: 4, delay: 9500, note: "E5" },
+                    //
+                    { idx: 2, delay: 10500, note: "A5" },
+                    { idx: 3, delay: 11000, note: "F#5" },
+                    { idx: 4, delay: 11500, note: "E5" },
+                    { idx: 5, delay: 12000, note: "D5" },
+                    { idx: 6, delay: 12500, note: "B4" }
+                ]
+            },
+            molihua: {
+                title: "ดอกมะลิ (Jasmine Flower)",
+                notes: [
+                    { idx: 5, delay: 0, note: "D5" },
+                    { idx: 5, delay: 400, note: "D5" },
+                    { idx: 3, delay: 800, note: "F#5" },
+                    { idx: 2, delay: 1200, note: "A5" },
+                    { idx: 2, delay: 1600, note: "A5" },
+                    { idx: 1, delay: 2000, note: "B5" },
+                    { idx: 2, delay: 2400, note: "A5" },
+                    //
+                    { idx: 5, delay: 3200, note: "D5" },
+                    { idx: 5, delay: 3600, note: "D5" },
+                    { idx: 3, delay: 4000, note: "F#5" },
+                    { idx: 2, delay: 4400, note: "A5" },
+                    { idx: 2, delay: 4800, note: "A5" },
+                    { idx: 1, delay: 5200, note: "B5" },
+                    { idx: 2, delay: 5600, note: "A5" },
+                    //
+                    { idx: 2, delay: 6400, note: "A5" },
+                    { idx: 2, delay: 6800, note: "A5" },
+                    { idx: 2, delay: 7200, note: "A5" },
+                    { idx: 3, delay: 7600, note: "F#5" },
+                    { idx: 5, delay: 8000, note: "D5" },
+                    { idx: 4, delay: 8400, note: "E5" },
+                    { idx: 5, delay: 8800, note: "D5" }
+                ]
+            },
+            loykrathong: {
+                title: "ลอยกระทง (Loy Krathong)",
+                notes: [
+                    { idx: 7, delay: 0, note: "A4" },
+                    { idx: 7, delay: 400, note: "A4" },
+                    { idx: 7, delay: 800, note: "A4" },
+                    { idx: 6, delay: 1200, note: "B4" },
+                    { idx: 5, delay: 1600, note: "D5" },
+                    //
+                    { idx: 5, delay: 2400, note: "D5" },
+                    { idx: 6, delay: 2800, note: "B4" },
+                    { idx: 7, delay: 3200, note: "A4" },
+                    { idx: 6, delay: 3600, note: "B4" },
+                    { idx: 5, delay: 4000, note: "D5" },
+                    //
+                    { idx: 6, delay: 4800, note: "B4" },
+                    { idx: 5, delay: 5200, note: "D5" },
+                    { idx: 4, delay: 5600, note: "E5" },
+                    { idx: 3, delay: 6000, note: "F#5" },
+                    { idx: 4, delay: 6400, note: "E5" },
+                    { idx: 5, delay: 6800, note: "D5" },
+                    //
+                    { idx: 5, delay: 7600, note: "D5" },
+                    { idx: 6, delay: 8000, note: "B4" },
+                    { idx: 7, delay: 8400, note: "A4" },
+                    { idx: 6, delay: 8800, note: "B4" },
+                    { idx: 7, delay: 9200, note: "A4" }
+                ]
+            }
+        };
+
+        let audioCtx;
+        let masterGain;
+        let compressor;
+        let dest; // For recording
+        let mediaRecorder;
+        let recordedChunks = [];
+        let audioBlob;
+        let audioUrl;
+        let isRecording = false;
+
+        // Autoplay Logic States
+        let isAutoplayPlaying = false;
+        let autoplayTimeouts = [];
+
+        // Custom safe Notification toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3500);
+        }
+
+        // Initialize App
+        function startApp() {
+            document.getElementById('hint-overlay').style.display = 'none';
+            initAudio();
+            renderStrings();
+        }
+
+        // --- Audio Engine (Optimized) ---
+        function initAudio() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext({
+                latencyHint: 'interactive' // Hint browser to prioritize low latency
+            });
+            
+            // 1. Create Compressor to prevent clipping (Distortion)
+            compressor = audioCtx.createDynamicsCompressor();
+            compressor.threshold.setValueAtTime(-24, audioCtx.currentTime);
+            compressor.knee.setValueAtTime(30, audioCtx.currentTime);
+            compressor.ratio.setValueAtTime(12, audioCtx.currentTime);
+            compressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+            compressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+
+            // 2. Master volume
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.8; // Safe level entering compressor
+
+            // 3. Routing: Inputs -> MasterGain -> Compressor -> Destination
+            masterGain.connect(compressor);
+            compressor.connect(audioCtx.destination);
+
+            // Setup Recording Destination from Compressor output
+            dest = audioCtx.createMediaStreamDestination();
+            compressor.connect(dest);
+        }
+
+        function playSound(freq) {
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const t = audioCtx.currentTime;
+
+            // 1. Oscillator
+            const osc = audioCtx.createOscillator();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, t);
+
+            // 2. Filter (Pluck character)
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.Q.value = 1; // Slight resonance
+            filter.frequency.setValueAtTime(3500, t);
+            filter.frequency.exponentialRampToValueAtTime(200, t + 0.3);
+
+            // 3. Envelope
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(1, t + 0.015); // Fast attack
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 2.5); // Sustain
+
+            // Connect
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGain);
+
+            // Start
+            osc.start(t);
+            osc.stop(t + 2.5);
+
+            // Important: Cleanup to prevent memory leaks and audio dropouts
+            osc.onended = () => {
+                osc.disconnect();
+                filter.disconnect();
+                gain.disconnect();
+            };
+        }
+
+        // --- Visuals & DOM ---
+        function renderStrings() {
+            const container = document.getElementById('strings-area');
+            container.innerHTML = '';
+
+            stringData.forEach((s, index) => {
+                const row = document.createElement('div');
+                row.className = 'string-row';
+                
+                // Bridge
+                const bridge = document.createElement('div');
+                bridge.className = 'bridge';
+                const percent = (index / 20) * 60 + 10;
+                bridge.style.right = `${percent}%`;
+                row.appendChild(bridge);
+
+                // Note Label
+                const label = document.createElement('div');
+                label.className = 'note-label';
+                label.innerText = s.note;
+                row.appendChild(label);
+
+                // String Line
+                const stringLine = document.createElement('div');
+                stringLine.className = `string ${s.isGreen ? 'green' : ''}`;
+                stringLine.dataset.index = index;
+                stringLine.dataset.freq = s.freq;
+                
+                row.appendChild(stringLine);
+                container.appendChild(row);
+            });
+
+            setupInteraction();
+        }
+
+        // --- Core Playback Event Trigger (Shared by Manual and Autoplay) ---
+        function triggerPluck(index, isAutoplay = false) {
+            const stringEl = document.querySelector(`.string[data-index="${index}"]`);
+            if (!stringEl) return;
+
+            const freq = parseFloat(stringEl.dataset.freq);
+            playSound(freq);
+
+            // Highlight corresponding label during demo
+            const row = stringEl.closest('.string-row');
+            const label = row ? row.querySelector('.note-label') : null;
+
+            // Visual feedback
+            const activeClass = isAutoplay ? 'vibrating-autoplay' : 'vibrating';
+            stringEl.classList.remove('vibrating', 'vibrating-autoplay');
+            if (label) label.classList.add('label-highlight');
+
+            void stringEl.offsetWidth; // trigger reflow
+            stringEl.classList.add(activeClass);
+
+            setTimeout(() => {
+                stringEl.classList.remove(activeClass);
+                if (label) label.classList.remove('label-highlight');
+            }, isAutoplay ? 400 : 300);
+        }
+
+        // --- Autoplay Demonstration System ---
+        function changeSong() {
+            if (isAutoplayPlaying) {
+                stopAutoplay();
+            }
+        }
+
+        function toggleAutoplay() {
+            const songSelect = document.getElementById('song-select');
+            const songKey = songSelect.value;
+
+            if (!songKey) {
+                showToast("โปรดเลือกบทเพลงที่ต้องการให้ระบบเล่นอัตโนมัติ 🎵");
+                return;
+            }
+
+            if (isAutoplayPlaying) {
+                stopAutoplay();
+            } else {
+                startAutoplay(songKey);
+            }
+        }
+
+        function startAutoplay(songKey) {
+            const song = songs[songKey];
+            if (!song) return;
+
+            isAutoplayPlaying = true;
+            const btn = document.getElementById('btn-autoplay');
+            btn.innerHTML = '⏹ หยุดเล่น';
+            btn.classList.add('active-play');
+
+            const nowPlayingEl = document.getElementById('now-playing');
+            nowPlayingEl.innerText = `กำลังเล่น: ${song.title}`;
+
+            autoplayTimeouts = [];
+
+            // Schedule note triggers
+            song.notes.forEach(noteData => {
+                const playTimeout = setTimeout(() => {
+                    triggerPluck(noteData.idx, true);
+                }, noteData.delay);
+                autoplayTimeouts.push(playTimeout);
+            });
+
+            // "จบเพลงหยุดด้วย" - Set a final timeout to stop autoplay at song's completion
+            const totalDuration = Math.max(...song.notes.map(n => n.delay)) + 1200; // note delay + fadeout padding
+            const endTimeout = setTimeout(() => {
+                stopAutoplay();
+                showToast(`เล่นเพลง "${song.title}" จบเรียบร้อยแล้ว ✨`);
+            }, totalDuration);
+            
+            autoplayTimeouts.push(endTimeout);
+        }
+
+        function stopAutoplay() {
+            isAutoplayPlaying = false;
+            
+            // Clear all pending timeouts
+            autoplayTimeouts.forEach(clearTimeout);
+            autoplayTimeouts = [];
+
+            // Reset UI states
+            const btn = document.getElementById('btn-autoplay');
+            btn.innerHTML = '▶️ เล่นอัตโนมัติ';
+            btn.classList.remove('active-play');
+
+            document.getElementById('now-playing').innerText = '';
+
+            // Clean up left-over visual classes
+            document.querySelectorAll('.string').forEach(el => {
+                el.classList.remove('vibrating', 'vibrating-autoplay');
+            });
+            document.querySelectorAll('.note-label').forEach(el => {
+                el.classList.remove('label-highlight');
+            });
+        }
+
+        // --- Interaction Logic (Optimized for Glissando) ---
+        function setupInteraction() {
+            const container = document.getElementById('board');
+            let isDragging = false;
+
+            const pluck = (target) => {
+                if (target && target.classList.contains('string')) {
+                    const idx = target.dataset.index;
+                    triggerPluck(idx, false);
+                }
+            };
+
+            // Mouse
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                pluck(e.target);
+            });
+
+            container.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const el = document.elementFromPoint(e.clientX, e.clientY);
+                    // Use expanded hit area check or direct element check
+                    if (el && el.classList.contains('string') && el !== window.lastPlucked) {
+                        pluck(el);
+                        window.lastPlucked = el;
+                    }
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+                window.lastPlucked = null;
+            });
+
+            // Touch - Optimized for Glissando
+            container.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    const el = document.elementFromPoint(t.clientX, t.clientY);
+                    if (el) pluck(el);
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    const el = document.elementFromPoint(t.clientX, t.clientY);
+                    
+                    if (el && el.classList.contains('string')) {
+                        // Check against the last target specifically for this touch identifier
+                        if (t.identifier !== undefined && window['lastTouch' + t.identifier] === el) {
+                            continue; 
+                        }
+                        
+                        pluck(el);
+                        // Save last touched element for this specific finger
+                        if (t.identifier !== undefined) {
+                            window['lastTouch' + t.identifier] = el;
+                        }
+                    }
+                }
+            }, { passive: false });
+            
+            container.addEventListener('touchend', (e) => {
+                 for (let i = 0; i < e.changedTouches.length; i++) {
+                    const t = e.changedTouches[i];
+                    delete window['lastTouch' + t.identifier];
+                 }
+            });
+        }
+
+        // --- Original Features ---
+        function toggleNotes() {
+            const board = document.getElementById('strings-area');
+            board.classList.toggle('show-notes');
+            const btn = document.getElementById('btn-notes');
+            btn.innerText = board.classList.contains('show-notes') ? 'ซ่อนโน้ต' : 'แสดงโน้ต';
+        }
+
+        function toggleRecord() {
+            const btn = document.getElementById('btn-record');
+            
+            if (!isRecording) {
+                recordedChunks = [];
+                // Check if browser supports MediaRecorder
+                if (!window.MediaRecorder) {
+                    showToast("เบราว์เซอร์ของคุณไม่รองรับการบันทึกเสียง 🎙️");
+                    return;
+                }
+                
+                try {
+                    mediaRecorder = new MediaRecorder(dest.stream);
+                } catch (err) {
+                    showToast("การเตรียมระบบบันทึกเสียงล้มเหลว");
+                    return;
+                }
+                
+                mediaRecorder.ondataavailable = (evt) => {
+                    if (evt.data.size > 0) recordedChunks.push(evt.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+                    audioUrl = URL.createObjectURL(audioBlob);
+                    document.getElementById('btn-play').disabled = false;
+                    document.getElementById('btn-download').disabled = false;
+                    showToast("บันทึกเสียงสำเร็จ! สามารถกด 'เล่น' หรือ 'โหลด' ได้เลยครับ 💾");
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                btn.innerHTML = '⏹ หยุดอัด';
+                btn.classList.add('active-record');
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.innerHTML = '🔴 อัดเสียง';
+                btn.classList.remove('active-record');
+            }
+        }
+
+        function playRecording() {
+            if (!audioUrl) return;
+            const audio = new Audio(audioUrl);
+            audio.play();
+        }
+
+        function downloadRecording() {
+            if (!audioUrl) return;
+            const a = document.createElement('a');
+            a.href = audioUrl;
+            a.download = 'guzheng_recording.webm';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>
